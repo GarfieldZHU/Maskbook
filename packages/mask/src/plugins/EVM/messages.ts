@@ -23,16 +23,10 @@ export interface EVM_Messages {
         result?: any
         error: Error | null
     }
-    pickToken: {
-        chainId?: ChainId
-    }
     rpc: unknown
 }
 
-export const evmEventEmitter: PluginMessageEmitter<EVM_Messages> = createPluginMessage<EVM_Messages>(
-    PLUGIN_ID,
-    serializer,
-)
+const evmEventEmitter: PluginMessageEmitter<EVM_Messages> = createPluginMessage<EVM_Messages>(PLUGIN_ID, serializer)
 
 export const EVM_Messages: { events: PluginMessageEmitter<EVM_Messages> } = {
     events: evmEventEmitter,

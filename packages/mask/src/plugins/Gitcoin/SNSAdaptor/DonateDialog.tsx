@@ -91,10 +91,10 @@ export function DonateDialog(props: DonateDialogProps) {
     const onSelectTokenChipClick = useCallback(async () => {
         const pickedToken = await pickToken({
             disableNativeToken: false,
-            selectedTokens: token ? [token.address] : [],
+            selectedTokens: token?.address ? [token.address] : [],
         })
         setToken(pickedToken)
-    }, [token?.address])
+    }, [pickToken, token?.address])
     // #endregion
 
     // #region amount

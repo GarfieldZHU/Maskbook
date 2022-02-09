@@ -1,5 +1,4 @@
 import type { Plugin } from '@masknet/plugin-infra'
-import { EvmContextProvider } from '../../EVM/contexts'
 import { base } from '../base'
 import { baseDeferred } from '../base-deferred'
 import { TraderDialog } from './trader/TraderDialog'
@@ -10,13 +9,7 @@ const sns: Plugin.SNSAdaptor.Definition = {
     ...base,
     ...baseDeferred,
     init(signal) {},
-    SearchResultBox() {
-        return (
-            <EvmContextProvider>
-                <SearchResultInspector />
-            </EvmContextProvider>
-        )
-    },
+    SearchResultBox: SearchResultInspector,
     GlobalInjection: function Component() {
         return (
             <>

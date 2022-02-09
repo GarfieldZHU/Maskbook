@@ -82,6 +82,7 @@ export const Assets = memo<TokenAssetsProps>(({ network }) => {
                                 className={classes.addCustomTokenButton}
                                 onClick={async () => {
                                     if (currentTab === AssetTab.Token) {
+                                        // TODO handle result
                                         await pickToken({
                                             whitelist: [],
                                         })

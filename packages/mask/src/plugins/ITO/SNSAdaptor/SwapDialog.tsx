@@ -153,6 +153,8 @@ export function SwapDialog(props: SwapDialogProps) {
         setSwapAmount(initAmount.multipliedBy(ratio))
         setInputAmountForUI(initAmount.isZero() ? '' : formatBalance(initAmount.multipliedBy(ratio), picked.decimals))
     }, [
+        initAmount,
+        payload,
         pickToken,
         exchangeTokens
             .map((x) => x.address)
