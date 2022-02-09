@@ -1,6 +1,8 @@
+import { NetworkPluginID, useLookupAddress, useNetworkDescriptor, useWeb3State } from '@masknet/plugin-infra'
+import { NetworkType } from '@masknet/public-api'
+import { FormattedAddress, TokenAmountPanel } from '@masknet/shared'
 import { MaskColorVar, MaskTextField } from '@masknet/theme'
-import { Box, Button, IconButton, Link, Popover, Stack, Typography } from '@mui/material'
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { isGreaterThan, isZero, multipliedBy, rightShift } from '@masknet/web3-shared-base'
 import {
     EthereumTokenType,
     formatWeiToEther,
@@ -16,20 +18,17 @@ import {
     useTokenConstants,
     useTokenTransferCallback,
 } from '@masknet/web3-shared-evm'
-import { isGreaterThan, isZero, multipliedBy, rightShift } from '@masknet/web3-shared-base'
-import BigNumber from 'bignumber.js'
-import { NetworkPluginID, useLookupAddress, useNetworkDescriptor, useWeb3State } from '@masknet/plugin-infra'
-import { FormattedAddress, TokenAmountPanel, useRemoteControlledDialog } from '@masknet/shared'
 import TuneIcon from '@mui/icons-material/Tune'
-import { EthereumAddress } from 'wallet.ts'
-import { useDashboardI18N } from '../../../../locales'
-import { useNativeTokenPrice } from './useNativeTokenPrice'
-import { useGasConfig } from '../../hooks/useGasConfig'
-import { NetworkType } from '@masknet/public-api'
+import { Box, Button, IconButton, Link, Popover, Stack, Typography } from '@mui/material'
+import BigNumber from 'bignumber.js'
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useUpdateEffect } from 'react-use'
 import { v4 as uuid } from 'uuid'
-import { PluginMessages } from '../../../../API'
-import type { SelectTokenDialogEvent } from '@masknet/plugin-wallet'
+import { EthereumAddress } from 'wallet.ts'
+import { usePickToken } from '../../../../../../mask/src/plugins/EVM/contexts'
+import { useDashboardI18N } from '../../../../locales'
+import { useGasConfig } from '../../hooks/useGasConfig'
+import { useNativeTokenPrice } from './useNativeTokenPrice'
 
 interface TransferERC20Props {
     token: FungibleTokenDetailed
@@ -49,19 +48,9 @@ export const TransferERC20 = memo<TransferERC20Props>(({ token }) => {
     const network = useNetworkDescriptor()
     const [gasLimit_, setGasLimit_] = useState(0)
 
-    const { setDialog: setSelectToken } = useRemoteControlledDialog(
-        PluginMessages.Wallet.events.selectTokenDialogUpdated,
-        useCallback(
-            (ev: SelectTokenDialogEvent) => {
-                if (ev.open || !ev.token || ev.uuid !== id) return
-                setSelectedToken(ev.token)
-            },
-            [id],
-        ),
-    )
-
     const { value: defaultGasPrice = '0' } = useGasPrice()
 
+    const pickToken = usePickToken()
     const [selectedToken, setSelectedToken] = useState<FungibleTokenDetailed>(token)
     const chainId = useChainId()
     const is1559Supported = useMemo(() => isEIP1559Supported(chainId), [chainId])
@@ -278,12 +267,12 @@ export const TransferERC20 = memo<TransferERC20Props>(({ token }) => {
                         SelectTokenChip={{
                             loading: false,
                             ChipProps: {
-                                onClick: () =>
-                                    setSelectToken({
-                                        open: true,
-                                        uuid: id,
+                                onClick: async () => {
+                                    const pickedToken = await pickToken({
                                         disableNativeToken: false,
-                                    }),
+                                    })
+                                    setSelectedToken(pickedToken)
+                                },
                             },
                         }}
                     />

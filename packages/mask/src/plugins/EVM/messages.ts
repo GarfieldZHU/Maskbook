@@ -1,5 +1,6 @@
 import { createPluginMessage, createPluginRPC, PluginMessageEmitter } from '@masknet/plugin-infra'
 import { serializer } from '@masknet/shared-base'
+import type { ChainId } from '@masknet/web3-shared-evm'
 import type { JsonRpcPayload } from 'web3-core-helpers'
 import { PLUGIN_ID } from './constants'
 
@@ -22,11 +23,19 @@ export interface EVM_Messages {
         result?: any
         error: Error | null
     }
+    pickToken: {
+        chainId?: ChainId
+    }
     rpc: unknown
 }
 
+export const evmEventEmitter: PluginMessageEmitter<EVM_Messages> = createPluginMessage<EVM_Messages>(
+    PLUGIN_ID,
+    serializer,
+)
+
 export const EVM_Messages: { events: PluginMessageEmitter<EVM_Messages> } = {
-    events: createPluginMessage<EVM_Messages>(PLUGIN_ID, serializer),
+    events: evmEventEmitter,
 }
 
 export const EVM_RPC = createPluginRPC(PLUGIN_ID, () => import('./services'), EVM_Messages.events.rpc)
