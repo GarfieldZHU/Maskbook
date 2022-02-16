@@ -13,7 +13,7 @@ use(new Squash())
 use(new Translator())
 use(new Interceptor())
 
-export async function sendRequest<T extends unknown>(
+export async function request<T extends unknown>(
     requestArguments: RequestArguments,
     overrides?: SendOverrides,
     options?: RequestOptions,

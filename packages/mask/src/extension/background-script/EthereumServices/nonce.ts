@@ -3,7 +3,7 @@ import { EthereumAddress } from 'wallet.ts'
 import { getTransactionCount } from './network'
 import { currentMaskWalletChainIdSettings } from '../../../plugins/Wallet/settings'
 
-export class NonceManager {
+class NonceManager {
     constructor(private address: string) {}
     private nonce = NonceManager.INITIAL_NONCE
     private locked = false

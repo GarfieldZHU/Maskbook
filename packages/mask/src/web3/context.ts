@@ -103,7 +103,7 @@ function createWeb3Context(disablePopup = false, isMask = false): Web3ProviderTy
         trustToken: WalletRPC.trustToken,
         blockToken: WalletRPC.blockToken,
 
-        request: Services.Ethereum.sendRequest,
+        request: Services.Ethereum.request,
         getSendOverrides: () =>
             isMask
                 ? {
