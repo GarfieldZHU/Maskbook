@@ -1,47 +1,29 @@
-import type { JsonRpcResponse } from 'web3-core-helpers'
+import type { JsonRpcPayload, JsonRpcResponse } from 'web3-core-helpers'
 import { first } from 'lodash-unified'
 import WalletConnect from '@walletconnect/client'
 import type { IJsonRpcRequest } from '@walletconnect/types'
-import { ProviderType, ChainId, EthereumMethodType, createPayload } from '@masknet/web3-shared-evm'
+import { ProviderType, ChainId } from '@masknet/web3-shared-evm'
 import { resetAccount, updateAccount } from '../../../../plugins/Wallet/services'
 import { currentProviderSettings } from '../../../../plugins/Wallet/settings'
-import type { RequestArguments } from 'web3-core'
 import { BaseProvider } from './Base'
 import type { Provider } from '../types'
 
 export class WalletConnectProvider extends BaseProvider implements Provider {
-    private id = 0
     private connector: WalletConnect | null = null
 
-    private async signPersonalMessage(data: string, address: string, password: string) {
+    public async signPersonalMessage(data: string, address: string, password: string) {
         if (!this.connector) throw new Error('Connection Lost.')
         return (await this.connector.signPersonalMessage([data, address, password])) as string
     }
 
-    private async sendCustomRequest(payload: IJsonRpcRequest) {
+    public async sendCustomRequest(payload: JsonRpcPayload) {
         if (!this.connector) throw new Error('Connection Lost.')
         return (await this.connector.sendCustomRequest(payload as IJsonRpcRequest)) as JsonRpcResponse
     }
 
-    private async signTypedDataMessage(data: string, address: string) {
+    public async signTypedDataMessage(data: string, address: string) {
         if (!this.connector) throw new Error('Connection Lost.')
         return (await this.connector.signTypedData([data, address])) as string
-    }
-
-    override async request<T>(requestArguments: RequestArguments) {
-        const requestId = this.id++
-        const { method, params } = requestArguments
-
-        switch (method) {
-            case EthereumMethodType.PERSONAL_SIGN:
-                const [data, address] = params as [string, string]
-                return this.signPersonalMessage(data, address, '') as unknown as T
-            case EthereumMethodType.ETH_SEND_TRANSACTION:
-                const response = await this.sendCustomRequest(createPayload(requestId, method, params))
-                return response.result as T
-            default:
-                throw new Error('Not implemented.')
-        }
     }
 
     /**

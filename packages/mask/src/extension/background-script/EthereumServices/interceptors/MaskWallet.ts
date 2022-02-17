@@ -26,8 +26,33 @@ export class MaskWallet implements Middleware<Context> {
 
     async fn(context: Context, next: () => Promise<void>) {
         switch (context.request.method) {
+            case EthereumMethodType.PERSONAL_SIGN:
+                try {
+                    const [data, address] = context.request.params as [string, string]
+                    const key = await this.getPrivateKey(address)
+                    const web3 = await this.createWeb3(context.chainId, address, key)
+                    context.end(await web3.eth.sign(data, address))
+                } catch (error) {
+                    context.abort(error, 'Failed to sign data.')
+                }
+                break
+            case EthereumMethodType.ETH_SIGN_TYPED_DATA:
+                try {
+                    const [address, data] = context.request.params as [string, string]
+                    const key = await this.getPrivateKey(address)
+                    context.end(
+                        signTypedData({
+                            privateKey: toBuffer('0x' + key),
+                            data: JSON.parse(data),
+                            version: SignTypedDataVersion.V4,
+                        }),
+                    )
+                } catch (error) {
+                    context.abort(error, 'Failed to sign typed data.')
+                }
+                break
             case EthereumMethodType.ETH_SEND_TRANSACTION:
-                const config = context.config
+                const { config } = context
 
                 if (!config?.from && !config?.to) {
                     context.abort(new Error('Invalid JSON payload.'))
@@ -40,9 +65,9 @@ export class MaskWallet implements Middleware<Context> {
                 try {
                     const key = await this.getPrivateKey(config.from as string)
                     const web3 = await this.createWeb3(context.chainId, config.from as string, key)
-                    const signed = await web3.eth.accounts.signTransaction(config, key)
+                    const { rawTransaction } = await web3.eth.accounts.signTransaction(config, key)
 
-                    if (!signed.rawTransaction) {
+                    if (!rawTransaction) {
                         context.abort(new Error('Failed to sign transaction.'))
                         return
                     }
@@ -50,39 +75,16 @@ export class MaskWallet implements Middleware<Context> {
                     context.end(
                         await this.provider.request({
                             method: EthereumMethodType.ETH_SEND_RAW_TRANSACTION,
-                            params: [signed.rawTransaction],
+                            params: [rawTransaction],
                         }),
                     )
                 } catch (error) {
                     context.abort(error, 'Failed to send transaction.')
                 }
                 break
-            case EthereumMethodType.PERSONAL_SIGN:
-                try {
-                    const [data, address] = context.request.params as [string, string]
-                    const key = await this.getPrivateKey(address)
-                    const web3 = await this.createWeb3(context.chainId, address, key)
-                    context.end(await web3?.eth.sign(data, address))
-                } catch (error) {
-                    context.abort(error, 'Failed to sign data.')
-                }
-                break
-            case EthereumMethodType.ETH_SIGN_TYPED_DATA:
-                try {
-                    const [address, data] = context.request.params as [string, string]
-                    context.end(
-                        signTypedData({
-                            privateKey: toBuffer('0x' + (await this.getPrivateKey(address))),
-                            data: JSON.parse(data),
-                            version: SignTypedDataVersion.V4,
-                        }),
-                    )
-                } catch (error) {
-                    context.abort(error, 'Failed to sign typed data.')
-                }
-                break
             default:
                 await next()
+                break
         }
     }
 }
