@@ -23,13 +23,31 @@ export async function getAssetsList(address: string) {
     }
 }
 
+const auroraChainOnDebank = getDeBankConstants(ChainId.Aurora).CHAIN_ID
+type FieldKeys = Exclude<keyof GasPriceDictResponse['data'], 'update_at'>
+const fieldKeys = ['fast', 'normal', 'slow'] as FieldKeys[]
+/**
+ * Debank's data might be outdata, like gas price for aurora which requires 1 Gwei at least
+ * https://twitter.com/AlexAuroraDev/status/1490353255817302016
+ * Once debank fixes it, we will remove this modifier.
+ */
+function gasModifier(gasDict: GasPriceDictResponse, chain: string) {
+    if (chain === auroraChainOnDebank) {
+        fieldKeys.forEach((fieldKey) => {
+            const field = gasDict.data[fieldKey]
+            field.price = Math.max(field.price, 1000000000)
+        })
+    }
+    return gasDict
+}
+
 export async function getGasPriceDict(chainId: ChainId) {
     const { CHAIN_ID = '' } = getDeBankConstants(chainId)
     if (!CHAIN_ID) return null
     const response = await fetch(urlcat(DEBANK_API, '/chain/gas_price_dict_v2', { chain: CHAIN_ID }))
     const result = await response.json()
     if (result.error_code === 0) {
-        return result as GasPriceDictResponse
+        return gasModifier(result as GasPriceDictResponse, CHAIN_ID)
     }
     return null
 }
